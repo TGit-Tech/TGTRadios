@@ -1,40 +1,7 @@
+#include <TGTEbyte.h>
 
-// These are defined in Ebyte.h but Ebyte runs in it's own translation unit so not accessable outside.
-/*********************************************//**
- * @defgroup EM Ebyte Radio Models Supported
- * @{
- ************************************************/
-#define EM_NOTGOT        0
-#define EM_UNKNOWN       1
-#define EM_E22_400T30D   2
-#define EM_E22_400T33D   3
-#define EM_E22_900T30D   4
-#define EM_E32_433T20D   5
-#define EM_E32_433T30D   6
-#define EM_E220_400T30D  7
-
-/*********************************************//**
- * @defgroup EMS Ebyte Radio Model Series
- * @{
- ************************************************/
-#define EMS_UNKNOWN     0
-#define EMS_E220E22     1
-#define EMS_E32         2
-
-/*********************************************//**
- * @defgroup ERFMODE Ebyte Lora Radio Modes (M0,M1)
- * @{
- ************************************************/
-#define ERFNORMMODE  0
-#define ERFWAKEMODE  1
-#define ERFPWRSAVE   2
-#define ERFSETMODE   3
-///@}
-
-#include <Ebyte.h>
-
-//#define RFPINS 9,8,14,15,50       //IO-Access backplane RF-Pins *M0*/8, /*M1*/9, /*ATX*/14, /*ARX*/15, /*AUX*/50
-Ebyte oEbyte(9,8,14,15,50);
+//#define RFPINS 9,8,14,15,50       
+TGTEbyte oEbyte(Serial3,/*M0*/9,/*M1*/8,/*AUX*/50);
 
 void setup() {
   Serial.begin(115200);

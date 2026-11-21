@@ -11,7 +11,7 @@
  *********************************************************************************************************************/
 #pragma once
 
-#include "RadioI.h"
+#include "TGTRadioI.h"
 
 //#define FORCERADIOMODEL EM_E22_400T33D // Only define if you want to skip Auto RadioID identification.
 
