@@ -9,12 +9,14 @@
  *        ** Had a hard time figuring out that New Radio installs had to be in 'Fixed Mode'!
  *        ** Use Radio Menu PC Connect to verify/change be sure to turn off DEBUG and set both Serials to 9600.
  *********************************************************************************************************************/
-#ifndef _EBYTE_H
-#define _EBYTE_H
+#pragma once
 
-#include "RFC.h"
+#include "RadioI.h"
 #define RFCLASS Ebyte
-//#define FORCERADIOMODEL EM_E22_400T33D
+
+// Settings - Define these before including else get defaults
+//#define RFSERIAL Serial1
+//#define FORCERADIOMODEL EM_E22_400T33D // Only define if you want to skip Auto RadioID identification.
 
 /*********************************************//**
  * @defgroup EM Ebyte Radio Models Supported
@@ -55,6 +57,7 @@ class Ebyte : public RadioI {
   public:
     Ebyte(byte _PinM0, byte _PinM1, byte _PinTX, byte _PinRX, byte _PinAUX);
 
+    virtual void          Begin();
     virtual byte          RadioID();
     virtual void          Mode(byte _Mode);                 ///< SET \ref E32MODES[0]
     virtual byte          Mode();                           ///< GET \ref E32MODES[0]
@@ -91,11 +94,6 @@ class Ebyte : public RadioI {
     virtual bool          E32FECOn();
     virtual void          E22WOROn(bool _On);
     virtual bool          E22WOROn();
-
-    virtual bool          PacketAvailable();                ///< Loop() query to collect RxPacket
-    virtual void          Send(TxPacket* Tx);               ///< Send a TxPacket
-    RxPacket*             Packet = 0;                       ///< The RF-Received Packet data
-    unsigned long         PacketTimer = 0;
     
   private:
     void                  CheckRadio();
@@ -112,4 +110,3 @@ class Ebyte : public RadioI {
     byte                  PinTX=0, PinRX=0, PinAUX=0;
 };
 //_____________________________________________________________________________________________________________________
-#endif
