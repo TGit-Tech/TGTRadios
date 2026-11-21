@@ -1,30 +1,132 @@
 /******************************************************************************************************************//**
- * @file    E32.cpp
- * @brief   Ref.h
+ * @file Ebyte.h
+ * @brief Radio Communication for Ebyte Lora Radio Modules
+ * @notes Communication Only works when Radio Settings are as follow.
+ *        UartRate: 9600bps       FEC:        Enable      Address:  (Set via Menu)
+ *        Parity:   8N1           Fixed Mode: Enable      Channel:  (Set via Menu - MHz)
+ *        AirRate:  2.4kbps       WOR timing: 250ms
+ *        Power:    (Set Menu)    IO mode:    PushPull
+ *        ** Had a hard time figuring out that New Radio installs had to be in 'Fixed Mode'!
+ *        ** Use Radio Menu PC Connect to verify/change be sure to turn off DEBUG and set both Serials to 9600.
  *********************************************************************************************************************/
-#include "Ebyte.h"
+#pragma once
+
+#include "RadioI.h"
+
+//#define FORCERADIOMODEL EM_E22_400T33D // Only define if you want to skip Auto RadioID identification.
+
+/*********************************************//**
+ * @defgroup EM Ebyte Radio Models Supported
+ * @{
+ ************************************************/
+#define EM_NOTGOT        0
+#define EM_UNKNOWN       1
+#define EM_E22_400T30D   2
+#define EM_E22_400T33D   3
+#define EM_E22_900T30D   4
+#define EM_E32_433T20D   5
+#define EM_E32_433T30D   6
+#define EM_E220_400T30D  7
+
+/*********************************************//**
+ * @defgroup EMS Ebyte Radio Model Series
+ * @{
+ ************************************************/
+#define EMS_UNKNOWN     0
+#define EMS_E220E22     1
+#define EMS_E32         2
+
+/*********************************************//**
+ * @defgroup ERFMODE Ebyte Lora Radio Modes (M0,M1)
+ * @{
+ ************************************************/
+#define ERFNORMMODE  0
+#define ERFWAKEMODE  1
+#define ERFPWRSAVE   2
+#define ERFSETMODE   3
+///@}
+
+/******************************************************************************************************************//**
+ * @class   Ebyte Radio Class
+ * @brief   Ebyte brand Radio Settings and Send/Receive bytes Handling.
+ *********************************************************************************************************************/
+class TGTEbyte : public TGTRadioI {
+  public:
+    TGTEbyte(HardwareSerial& _SPort, byte _PinM0, byte _PinM1, byte _PinAUX);
+
+    virtual void          Begin();
+    virtual byte          RadioID();
+    virtual void          Mode(byte _Mode);                 ///< SET \ref E32MODES[0]
+    virtual byte          Mode();                           ///< GET \ref E32MODES[0]
+
+    virtual void          Address(unsigned int _RFAddress); ///< SET Radio RF-Address[1][2]
+    virtual unsigned int  Address();                        ///< GET Radio RF-Address[1][2]
+
+    virtual void          AirSpeed(byte _Speed);            ///< SET Radio AirSpeed[3.012]
+    virtual byte          AirSpeed();                       ///< GET Radio AirSpeed[3.012]
+    virtual void          UARTSpeed(byte _eSpeed);          ///< SET Radio UART Speed[3.34567]
+    virtual byte          UARTSpeed();                      ///< GET Radio UART Speed[3.34567]
+
+    virtual void          Frequency(int _RFFrequency);      ///< SET Radio Frequency Setting[4.01234]
+    virtual int           Frequency();                      ///< GET Radio Frequency Setting[4.01234]
+    virtual byte          Channel();                        ///< GET Channel and Return to Normal Mode[4.01234]
+
+    virtual void          TxPower(byte _TxPower);           ///< SET Radio Tx Power Setting[5.01]
+    virtual byte          TxPower();                        ///< GET Radio Tx Power Setting[5.01]
+
+    virtual void          NetID(byte _NetID);
+    virtual byte          NetID();
+
+    virtual void          FixedTransmission(bool _Fixed);
+    virtual bool          FixedTransmission();
+    virtual void          E32IODrive(bool _Drive);
+    virtual bool          E32IODrive();
+    virtual void          RSSIOn(bool _On);
+    virtual bool          RSSIOn();
+    virtual void          LBTOn(bool _On);
+    virtual bool          LBTOn();
+    virtual void          WUORTime(byte _Time);
+    virtual byte          WUORTime();
+    virtual void          E32FECOn(bool _On);
+    virtual bool          E32FECOn();
+    virtual void          E22WOROn(bool _On);
+    virtual bool          E22WOROn();
+    
+  private:
+    void                  CheckRadio();
+    void                  GetParam(bool _SkipReq=false);
+    void                  SetParam();
+    byte                  EM=EM_NOTGOT;     // Ebyte Module Full
+    byte                  EMS=EMS_UNKNOWN;  // Ebyte Module Series
+    byte                  paramADDH=0, paramADDL=0;
+    byte                  paramNETID=0;
+    byte                  paramREG0SPED=0, paramREG1OPT=0, paramREG2CHAN=0, paramREG3=0;
+    byte                  paramCRYPTH=0, paramCRYPTL=0;
+    byte                  EParamGotBytes = 0;
+    byte                  PinM0=0, PinM1=0; 
+    byte                  PinTX=0, PinRX=0, PinAUX=0;
+    HardwareSerial&       SPort;
+};
+//_____________________________________________________________________________________________________________________
 
 //#####################################################################################################################
-Ebyte::Ebyte(byte _PinM0, byte _PinM1, byte _PinTX, byte _PinRX, byte _PinAUX):
-  RadioI() {
-    DBLENTER(("Ebyte::Ebyte"))
-    PinM0 = _PinM0; PinM1 = _PinM1; PinTX = _PinTX; PinRX = _PinRX; PinAUX = _PinAUX;
+TGTEbyte::TGTEbyte(HardwareSerial& _SPort, byte _PinM0, byte _PinM1, byte _PinAUX)
+: RadioI(), SPort(_SPort), PinM0(_PinM0), PinM1(_PinM1), PinAUX(_PinAUX) {
+    DBLENTER(("TGTTGTEbyte::TGTEbyte"))
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Ebyte::Begin() {
+void TGTEbyte::Begin() {
     if ( PinM0 != 0 ) pinMode(PinM0, OUTPUT); 
     if ( PinM1 != 0 ) pinMode(PinM1, OUTPUT);
-    if ( PinTX != 0 ) pinMode(PinTX, OUTPUT);
-    if ( PinRX != 0 ) pinMode(PinRX, INPUT_PULLUP);
     if ( PinAUX != 0 ) pinMode(PinAUX, INPUT_PULLUP);
     
     CheckRadio();  
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::RadioID() { return EM; }
+byte TGTEbyte::RadioID() { return EM; }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::Address(unsigned int _RFAddress) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::Address(unsigned int _RFAddress) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -36,13 +138,13 @@ void Ebyte::Address(unsigned int _RFAddress) {
   Mode(CurrentMode);                                            // Return to last Mode RF was set to.
 }
 //-----------------------------------------------------------------------------------------------------
-unsigned int Ebyte::Address() {
+unsigned int TGTEbyte::Address() {
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
   return word(paramADDH, paramADDL);            // bytes[12]
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::NetID(byte _NetID) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::NetID(byte _NetID) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EM==EM_E22_400T30D||EM==EM_E22_400T33D||EM==EM_E22_900T30D) { // Only supported on E22 not E220/32
     byte CurrentMode=Mode();                                        // Check Radio is Identified
     if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -53,18 +155,18 @@ void Ebyte::NetID(byte _NetID) {
   }
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::NetID() {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+byte TGTEbyte::NetID() {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EM==EM_E22_400T30D||EM==EM_E22_400T33D||EM==EM_E22_900T30D) { // Only supported on E22 not E220/32
     if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
     return paramNETID;
   }
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::AirSpeed(byte _Speed) {
+void TGTEbyte::AirSpeed(byte _Speed) {
   if ( _Speed > 7 ) return;                                     // Check Boundaries
 
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -76,15 +178,15 @@ void Ebyte::AirSpeed(byte _Speed) {
   Mode(CurrentMode);                                            // Return to last Mode RF was set to.
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::AirSpeed() {
+byte TGTEbyte::AirSpeed() {
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
   return (paramREG0SPED&0x07);                                    // ADR.210
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::UARTSpeed(byte _SpeedParity) {
+void TGTEbyte::UARTSpeed(byte _SpeedParity) {
   if ( _SpeedParity > 31 ) return;                              // Check Boundaries
 
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -98,7 +200,7 @@ void Ebyte::UARTSpeed(byte _SpeedParity) {
   Mode(CurrentMode);                                            // Return to last Mode RF was set to.
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::UARTSpeed() {
+byte TGTEbyte::UARTSpeed() {
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
   return ((paramREG0SPED&0xF8)>>3);       //E32 Parity.76,UARTSPD.543 - E22 UARTSPD.765,Parity.43
 }
@@ -106,11 +208,11 @@ byte Ebyte::UARTSpeed() {
 // E32 - 'Channel' corresponds to 00H to 1FH and assigns 410 to 441MHz 
 // Each (1)Channel is (1)MHz adjust [1F=31].  Default is 17H(23DEC) + 410 = 433.
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::Frequency(int _RFFrequency) {           DBLAENTER((_RFFrequency),("Ebyte::Frequency(SET)\n"))
+void TGTEbyte::Frequency(int _RFFrequency) {           DBLAENTER((_RFFrequency),("TGTEbyte::Frequency(SET)\n"))
   if (EM==EM_E22_900T30D&&(850>_RFFrequency||_RFFrequency>930)) return;
   if (!EM==EM_E22_900T30D&&(410>_RFFrequency||_RFFrequency>441)) return;  // Check Boundaries
 
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -123,23 +225,23 @@ void Ebyte::Frequency(int _RFFrequency) {           DBLAENTER((_RFFrequency),("E
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //---------------------------------------------------------------------------------------------------------------------
-int Ebyte::Frequency() {
+int TGTEbyte::Frequency() {
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
 
   if (EM==EM_E22_900T30D) { return Channel()+850;}
   else {                    return Channel()+410;}
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::Channel() {
+byte TGTEbyte::Channel() {
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters
   return paramREG2CHAN;
   //if (EMS==EMS_E32) return (paramCHAN&0x1F);  // Return CHAN.43210
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Ebyte::TxPower(byte _TxPower) {
+void TGTEbyte::TxPower(byte _TxPower) {
   if ( _TxPower > 3 ) return;                                     // Check Boundaries
 
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -151,14 +253,14 @@ void Ebyte::TxPower(byte _TxPower) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::TxPower() {
+byte TGTEbyte::TxPower() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   return (paramREG1OPT&0x03);                                       // TX.10
   // Decoded by MenuValue (s) SetNumberName() see RadioTxPower
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::FixedTransmission(bool _Fixed) {    DBLAENTER((_Fixed),("Ebyte::FixedTransmission[SET](?)\n"))
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::FixedTransmission(bool _Fixed) {    DBLAENTER((_Fixed),("TGTEbyte::FixedTransmission[SET](?)\n"))
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -173,15 +275,15 @@ void Ebyte::FixedTransmission(bool _Fixed) {    DBLAENTER((_Fixed),("Ebyte::Fixe
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::FixedTransmission() {                         DBLENTER(("Ebyte::FixedTransmission[GET]()\n"))
+bool TGTEbyte::FixedTransmission() {                         DBLENTER(("TGTEbyte::FixedTransmission[GET]()\n"))
   if ( EParamGotBytes==0 ) GetParam();                                    // Get Parameters if needed
   if (EMS==EMS_E220E22)   {return ((paramREG3&0x40)>>6);}                 //E220&E22 REG3.6
   else if (EMS==EMS_E32)  {return ((paramREG1OPT&0x80)>>7);}              //E32 OPT.7
-  else {DBLERROR(("Ebyte::FixedTransmission[GET]() EMS not set!\n"))}
+  else {DBLERROR(("TGTEbyte::FixedTransmission[GET]() EMS not set!\n"))}
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::E32IODrive(bool _Drive) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::E32IODrive(bool _Drive) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EMS==EMS_E220E22) return;                                   // NOT SUPPORTED on E220 or E22
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -194,14 +296,14 @@ void Ebyte::E32IODrive(bool _Drive) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::E32IODrive() {
+bool TGTEbyte::E32IODrive() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EMS==EMS_E32)     return ((paramREG1OPT&0x40)>>6);            //E32 OPT.6
   // Not supported on E220 & E22
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::RSSIOn(bool _On) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::RSSIOn(bool _On) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EMS==EMS_E32) return;                                       // NOT SUPPORTED on E32
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -214,13 +316,13 @@ void Ebyte::RSSIOn(bool _On) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::RSSIOn() {
+bool TGTEbyte::RSSIOn() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EMS==EMS_E220E22) return ((paramREG3&0x80)>>7);    //E220&E22 REG3.7
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::LBTOn(bool _On) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::LBTOn(bool _On) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EMS==EMS_E32) return;                                       // NOT SUPPORTED on E32
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -233,13 +335,13 @@ void Ebyte::LBTOn(bool _On) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::LBTOn() {
+bool TGTEbyte::LBTOn() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EMS==EMS_E220E22) return ((paramREG3&0x10)>>4);    //E220&E22 REG3.4
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::WUORTime(byte _Time) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::WUORTime(byte _Time) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
@@ -256,14 +358,14 @@ void Ebyte::WUORTime(byte _Time) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::WUORTime() {
+byte TGTEbyte::WUORTime() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EMS==EMS_E32) return ((paramREG1OPT&0x38)>>3);                // E32 WU OPT.543
   if (EMS==EMS_E220E22) return paramREG3&0x03;                      // E22 WOR REG3.210
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::E32FECOn(bool _On) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::E32FECOn(bool _On) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EMS==EMS_E220E22) return;                                   // NOT SUPPORTED on E220&E22
   byte CurrentMode=Mode();                                        // Check Radio is Identified
   if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -276,14 +378,14 @@ void Ebyte::E32FECOn(bool _On) {
   Mode(CurrentMode);                                              // Return to Current Mode
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::E32FECOn() {
+bool TGTEbyte::E32FECOn() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EMS==EMS_E32) return ((paramREG1OPT&0x04)>>2);                // E32 OPT.2
   // NOT SUPPORTED on E220&E22
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::E22WOROn(bool _On) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::E22WOROn(bool _On) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   if (EM==EM_E22_400T30D||EM==EM_E22_400T33D||EM==EM_E22_900T30D) { // Only supported on E22 not E220/32
     byte CurrentMode=Mode();                                        // Check Radio is Identified
     if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);                  // Radio in SETMODE
@@ -294,60 +396,60 @@ void Ebyte::E22WOROn(bool _On) {
   }
 }
 //-----------------------------------------------------------------------------------------------------
-bool Ebyte::E22WOROn() {
+bool TGTEbyte::E22WOROn() {
   if ( EParamGotBytes==0 ) GetParam();                              // Get Parameters
   if (EM==EM_E22_400T30D||EM==EM_E22_400T33D||EM==EM_E22_900T30D) return ((paramREG3&0x08)>>3);
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Ebyte::SetParam() {                                           DBLENTER(("Ebyte::SetParam"))
+void TGTEbyte::SetParam() {                                           DBLENTER(("TGTEbyte::SetParam"))
   // Check Radio is Known and Radio is in SETMODE
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   byte CurrentMode=Mode(); if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);
 
   // SET Parameters
   if (EMS==EMS_E220E22) {
-    RFSERIAL.write(0xC0); //Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
-    RFSERIAL.write(0x00); //StartReg ( 0x00(00H) to 0x07(07H) )
-    if (EM==EM_E220_400T30D) {RFSERIAL.write(0x08);} else {RFSERIAL.write(0x09);} //Length
-    RFSERIAL.write(paramADDH);      //00H ADDH
-    RFSERIAL.write(paramADDL);      //01H ADDL
-    if (EM!=EM_E220_400T30D) RFSERIAL.write(paramNETID); //02H NETID
-    RFSERIAL.write(paramREG0SPED);  //03H/02H REG0 UART.765,PARITY.43,AIR.210
-    RFSERIAL.write(paramREG1OPT);   //04H/03H REG1 SUB.76,RSSI.5,NA.432,TX.01
-    RFSERIAL.write(paramREG2CHAN);  //05H/04H REG2 FREQ.76543210
-    RFSERIAL.write(paramREG3);      //06H/05H REG3 RSSI.7,FIX.6,NA.5,LBT.4,NA.3,WOR.210
-    RFSERIAL.write(paramCRYPTH);    //07H/06H CRYPT_H Key-byte
-    RFSERIAL.write(paramCRYPTL);    //08H/07H CRYPT_L Key-byte
+    SPort.write(0xC0); //Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
+    SPort.write(0x00); //StartReg ( 0x00(00H) to 0x07(07H) )
+    if (EM==EM_E220_400T30D) {SPort.write(0x08);} else {SPort.write(0x09);} //Length
+    SPort.write(paramADDH);      //00H ADDH
+    SPort.write(paramADDL);      //01H ADDL
+    if (EM!=EM_E220_400T30D) SPort.write(paramNETID); //02H NETID
+    SPort.write(paramREG0SPED);  //03H/02H REG0 UART.765,PARITY.43,AIR.210
+    SPort.write(paramREG1OPT);   //04H/03H REG1 SUB.76,RSSI.5,NA.432,TX.01
+    SPort.write(paramREG2CHAN);  //05H/04H REG2 FREQ.76543210
+    SPort.write(paramREG3);      //06H/05H REG3 RSSI.7,FIX.6,NA.5,LBT.4,NA.3,WOR.210
+    SPort.write(paramCRYPTH);    //07H/06H CRYPT_H Key-byte
+    SPort.write(paramCRYPTL);    //08H/07H CRYPT_L Key-byte
     
   } else if (EMS==EMS_E32) {
-    RFSERIAL.write(0xC0);           //b[0]=C0(SAVE) + 5 bytes parameters
-    RFSERIAL.write(paramADDH);      //b[1]
-    RFSERIAL.write(paramADDL);      //b[2]
-    RFSERIAL.write(paramREG0SPED);  //b[3]=SPED   Parity.76,UARTSPD.543,AIRDR.210
-    RFSERIAL.write(paramREG2CHAN);  //b[4]=CHAN   NA.765,CHAN.43210
-    RFSERIAL.write(paramREG1OPT);   //b[5]=OPTION FIX.7,IODR.6,WAKE.543,FEC.2,TX.10   
+    SPort.write(0xC0);           //b[0]=C0(SAVE) + 5 bytes parameters
+    SPort.write(paramADDH);      //b[1]
+    SPort.write(paramADDL);      //b[2]
+    SPort.write(paramREG0SPED);  //b[3]=SPED   Parity.76,UARTSPD.543,AIRDR.210
+    SPort.write(paramREG2CHAN);  //b[4]=CHAN   NA.765,CHAN.43210
+    SPort.write(paramREG1OPT);   //b[5]=OPTION FIX.7,IODR.6,WAKE.543,FEC.2,TX.10   
   }
-  RFSERIAL.flush();
+  SPort.flush();
   GetParam(true);       // Reload Parameters after set which replies with new parameters so skip request.
   Mode(CurrentMode);    // Return to last Mode RF was set to.
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Ebyte::GetParam(bool _SkipReq) {                                         DBLAENTER(("Ebyte::GetParam"),(_SkipReq))
+void TGTEbyte::GetParam(bool _SkipReq) {                                         DBLAENTER(("TGTEbyte::GetParam"),(_SkipReq))
   
   // Check Radio is Known and Radio is in SETMODE
   byte CurrentMode=Mode();if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::GetParam() EM<=EM_UNKNOWN\n")) return; }
   
   // Request Parameters
   if (!_SkipReq) {
-    if (EMS==EMS_E220E22) {     RFSERIAL.write(0xC1); //Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
-                                RFSERIAL.write(0x00); //Start-Reg
-      if (EM==EM_E220_400T30D) {RFSERIAL.write(0x08);DBLINFO(("Ebyte::GetParam Sending C1 00 08\n"))} 
-      else {                    RFSERIAL.write(0x09);DBLINFO(("Ebyte::GetParam Sending C1 00 09\n"))} //Length
+    if (EMS==EMS_E220E22) {     SPort.write(0xC1); //Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
+                                SPort.write(0x00); //Start-Reg
+      if (EM==EM_E220_400T30D) {SPort.write(0x08);DBLINFO(("TGTEbyte::GetParam Sending C1 00 08\n"))} 
+      else {                    SPort.write(0x09);DBLINFO(("TGTEbyte::GetParam Sending C1 00 09\n"))} //Length
 
     } else if (EM==EM_E32_433T20D||EM==EM_E32_433T30D) {
-                                RFSERIAL.write(0xC1);RFSERIAL.write(0xC1);RFSERIAL.write(0xC1); 
-                                DBLINFO(("Ebyte::GetParam Sending C1 C1 C1\n"))
+                                SPort.write(0xC1);SPort.write(0xC1);SPort.write(0xC1); 
+                                DBLINFO(("TGTEbyte::GetParam Sending C1 C1 C1\n"))
     }
   }
 
@@ -355,13 +457,13 @@ void Ebyte::GetParam(bool _SkipReq) {                                         DB
   EParamGotBytes=0;bool ReplyOk=true;
   unsigned long StartMillis = millis();
   while ( millis() - StartMillis < 200 ) {
-    while ( RFSERIAL.available() > 0 ) {
-      byte b=RFSERIAL.read();DBLAAINFO((EParamGotBytes),(b,HEX),("Ebyte::GetParam [?]=?"))
+    while ( SPort.available() > 0 ) {
+      byte b=SPort.read();DBLAAINFO((EParamGotBytes),(b,HEX),("TGTEbyte::GetParam [?]=?"))
       if (ReplyOk) {
         if (EMS==EMS_E220E22) {
           if (EParamGotBytes<=4) {
             switch(EParamGotBytes) {      //b[0]=Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
-              case 0: if (b!=0xC1) {ReplyOk=false;DBLAERROR(("Ebyte::GetParam No 0xC1 reply[0]=\n"),(b,HEX))} break;
+              case 0: if (b!=0xC1) {ReplyOk=false;DBLAERROR(("TGTEbyte::GetParam No 0xC1 reply[0]=\n"),(b,HEX))} break;
               case 1: break;              //b[1]=StartReg ( 0x00(00H) to 0x07(07H) )
               case 2: break;              //b[2]=Length ( Number of Parameter-bytes (0-8) )
               case 3: paramADDH=b; break; //b[3]=00H ADDH
@@ -383,7 +485,7 @@ void Ebyte::GetParam(bool _SkipReq) {                                         DB
 
         } else if (EMS==EMS_E32) {
           switch(EParamGotBytes) {          //b[0]=0xC0
-            case 0: if (b!=0xC0) {ReplyOk=false;DBLAERROR((b,HEX),("Ebyte::GetParam No 0xC0 reply[0]=\n"))} break;
+            case 0: if (b!=0xC0) {ReplyOk=false;DBLAERROR((b,HEX),("TGTEbyte::GetParam No 0xC0 reply[0]=\n"))} break;
             case 1: paramADDH=b; break;     //b[1]=ADDH
             case 2: paramADDL=b; break;     //b[2]=ADDL
             case 3: paramREG0SPED=b; break; //b[3]=SPED   Parity.76,UARTSPD.543,AIRDR.210
@@ -392,15 +494,15 @@ void Ebyte::GetParam(bool _SkipReq) {                                         DB
           }
         }
         if (ReplyOk) EParamGotBytes++;
-      } else {DBLAAINFO((EParamGotBytes),(b,HEX),("Ebyte::GetParam !ReplyOk[?]=?\n"))}
+      } else {DBLAAINFO((EParamGotBytes),(b,HEX),("TGTEbyte::GetParam !ReplyOk[?]=?\n"))}
     }
   }
-  DBLAINFO(("Ebyte::GetParam EParamGotBytes="),(EParamGotBytes))
+  DBLAINFO(("TGTEbyte::GetParam EParamGotBytes="),(EParamGotBytes))
   if (!_SkipReq) Mode(CurrentMode);    // Return to last Mode RF was set to.
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Ebyte::Mode(byte _Mode) {
-  if (EM<=EM_UNKNOWN) {DBLERROR(("Ebyte::Mode(SET) EM<=EM_UNKNOWN\n")) return; }
+void TGTEbyte::Mode(byte _Mode) {
+  if (EM<=EM_UNKNOWN) {DBLERROR(("TGTEbyte::Mode(SET) EM<=EM_UNKNOWN\n")) return; }
   if (EM==EM_E22_400T33D || EM==EM_E22_400T30D || EM==EM_E22_900T30D ) {
     if (      _Mode == ERFNORMMODE) {digitalWrite(PinM1, 0);digitalWrite(PinM0, 0);}
     else if ( _Mode == ERFWAKEMODE) {digitalWrite(PinM1, 0);digitalWrite(PinM0, 1);}
@@ -416,8 +518,8 @@ void Ebyte::Mode(byte _Mode) {
   delay(40); // Radio will not respond faster than this.
 }
 //-----------------------------------------------------------------------------------------------------
-byte Ebyte::Mode() {
-  if (EM<=EM_UNKNOWN) {/*DBLERROR(("Ebyte::Mode(GET) EM<=EM_UNKNOWN"))*/ return ERFNORMMODE; }
+byte TGTEbyte::Mode() {
+  if (EM<=EM_UNKNOWN) {/*DBLERROR(("TGTEbyte::Mode(GET) EM<=EM_UNKNOWN"))*/ return ERFNORMMODE; }
   int M1=digitalRead(PinM1);int M0=digitalRead(PinM0);
   if (EM==EM_E22_400T33D || EM==EM_E22_400T30D ) {
     if (M1==0 && M0==0) return ERFNORMMODE;
@@ -433,64 +535,64 @@ byte Ebyte::Mode() {
   }
 }
 //-----------------------------------------------------------------------------------------------------
-void Ebyte::CheckRadio() {                                              DBLENTER(("Ebyte::CheckRadio"))
+void TGTEbyte::CheckRadio() {                                              DBLENTER(("TGTEbyte::CheckRadio"))
   EM=EM_E22_900T30D;EMS=EMS_E220E22;  //version 261A; Static Set check Keypad dead goes away
   if ( EM==EM_NOTGOT ) {
     // Radio Auto-Discovery ForE22
     // REPLY Should have 3HEAD(C1 80 07) +7PINFO[80H-86H] = 10 total reply bytes
     // We use last PInfo-byte as extra-reply garbage bytes
     byte Pinfo[11]={0,0,0,0,0,0,0,0,0,0,0};byte byteIdx=0; 
-    DBLINFO(("Ebyte::CheckRadio ForE22 SENDING C1 80 07 @ M1=1,M0=0\n"))
+    DBLINFO(("TGTEbyte::CheckRadio ForE22 SENDING C1 80 07 @ M1=1,M0=0\n"))
     digitalWrite(PinM1, HIGH);digitalWrite(PinM0, LOW);delay(50);
-    RFSERIAL.write(0xC1);RFSERIAL.write(0x80);RFSERIAL.write(0x07);RFSERIAL.flush();
+    SPort.write(0xC1);SPort.write(0x80);SPort.write(0x07);SPort.flush();
     unsigned long StartMillis = millis();
     while ( millis() - StartMillis < 200 ) { 
-      while ( RFSERIAL.available() > 0 ) {
-        Pinfo[byteIdx]=byte(RFSERIAL.read());
+      while ( SPort.available() > 0 ) {
+        Pinfo[byteIdx]=byte(SPort.read());
         DBLAAINFO(("(idx)=?"),(byteIdx),(Pinfo[byteIdx],HEX))
         if (byteIdx<10) byteIdx++;
       } if (byteIdx==10) break; 
-    } DBLAINFO((millis() - StartMillis),("Ebyte::CheckRadio ForE22 END-REPLY Duration\n"))
+    } DBLAINFO((millis() - StartMillis),("TGTEbyte::CheckRadio ForE22 END-REPLY Duration\n"))
 
     // Parse Reply
     if ( Pinfo[0]==0xC1 && Pinfo[1]==0x80 && Pinfo[2]==0x07 ) { // E22 3-byte HEAD
       if ( Pinfo[3]==0x00 && Pinfo[4]==0x22 && Pinfo[5]==0x10 && Pinfo[6]==0x1E && Pinfo[7]==0x0B ) {
         EM=EM_E22_900T30D;EMS=EMS_E220E22;
-        DBLINFO(("Ebyte::CheckRadio ForE22 Discovered EM=EM_E22_900T30D\n"))
+        DBLINFO(("TGTEbyte::CheckRadio ForE22 Discovered EM=EM_E22_900T30D\n"))
       }
       if ( Pinfo[3]==0x00 && Pinfo[4]==0x22 && Pinfo[5]==0x40 && Pinfo[6]==0x21 && Pinfo[7]==0x0A ) {
         EM=EM_E22_400T33D;EMS=EMS_E220E22;
-        DBLINFO(("Ebyte::CheckRadio ForE22 Discovered EM=EM_E22_400T33D\n"))
+        DBLINFO(("TGTEbyte::CheckRadio ForE22 Discovered EM=EM_E22_400T33D\n"))
       }
     }
   }
   //------------------------------------------------------------------------------------------------------
   if ( EM==EM_NOTGOT ) {
     // Radio Auto-Discovery ForE32
-    DBLINFO(("Ebyte::CheckRadio ForE32 SENDING C3 C3 C3 @ M1=1,M0=1\n"))
+    DBLINFO(("TGTEbyte::CheckRadio ForE32 SENDING C3 C3 C3 @ M1=1,M0=1\n"))
     digitalWrite(PinM1, HIGH);digitalWrite(PinM0, HIGH);delay(50);
-    RFSERIAL.write(0xC3);RFSERIAL.write(0xC3);RFSERIAL.write(0xC3);RFSERIAL.flush();
+    SPort.write(0xC3);SPort.write(0xC3);SPort.write(0xC3);SPort.flush();
     byte Pinfo[5]={0,0,0,0,0};byte byteIdx=0; // PI[0-9]=Product Information bytes
     unsigned long StartMillis = millis();
     while ( millis() - StartMillis < 200 ) {
-      while ( RFSERIAL.available() > 0 ) {
-        Pinfo[byteIdx]=byte(RFSERIAL.read());
+      while ( SPort.available() > 0 ) {
+        Pinfo[byteIdx]=byte(SPort.read());
         DBLAAINFO((byteIdx),(Pinfo[byteIdx],HEX),(" (idx)=?"))
         if (byteIdx<4) byteIdx++;
       } if (byteIdx==4) break; 
     }
-    DBLAINFO((millis() - StartMillis),("Ebyte::CheckRadio ForE32 END-REPLY Duration\n"))
+    DBLAINFO((millis() - StartMillis),("TGTEbyte::CheckRadio ForE32 END-REPLY Duration\n"))
 
     // Parse Reply
     if ( Pinfo[0]==0xC3 ) { // E32 1-byte HEAD
       if        ( Pinfo[1]==0x32 ) {  // Is 433MHz
         // 1E is probably equal to a 30D
-        if (Pinfo[2]==0x48&&Pinfo[3]==0x14){EM=EM_E32_433T20D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T20D\n"))}
-        if (Pinfo[2]==0x44&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T30D [E32-TTL-1W]\n"))} //410-441Mhz,YBT17093321
-        if (Pinfo[2]==0x49&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T30D [Pre1B](TTL-1W)\n"))} //SN:W020987S00846 Pre-1B
-        if (Pinfo[2]==0x51&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T30D [1B]\n"))} //SN:W020583S02336
-        if (Pinfo[2]==0x53&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T30D [1B]\n"))} //SN:W020902S07862
-        if (Pinfo[2]==0x10&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E32_433T30D [V8]\n"))}
+        if (Pinfo[2]==0x48&&Pinfo[3]==0x14){EM=EM_E32_433T20D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T20D\n"))}
+        if (Pinfo[2]==0x44&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T30D [E32-TTL-1W]\n"))} //410-441Mhz,YBT17093321
+        if (Pinfo[2]==0x49&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T30D [Pre1B](TTL-1W)\n"))} //SN:W020987S00846 Pre-1B
+        if (Pinfo[2]==0x51&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T30D [1B]\n"))} //SN:W020583S02336
+        if (Pinfo[2]==0x53&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T30D [1B]\n"))} //SN:W020902S07862
+        if (Pinfo[2]==0x10&&Pinfo[3]==0x1E){EM=EM_E32_433T30D;EMS=EMS_E32;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E32_433T30D [V8]\n"))}
       } else if ( Pinfo[1]==0x38 ) {  // Is 470MHz
       } else if ( Pinfo[1]==0x45 ) {  // Is 868MHz
       } else if ( Pinfo[1]==0x44 ) {  // Is 915MHz
@@ -505,21 +607,21 @@ void Ebyte::CheckRadio() {                                              DBLENTER
     // REPLY Should have 3HEAD(C1 08 03) +3PINFO[08H-0AH] = 6 total reply bytes
     // We use last PInfo-byte as extra-reply garbage bytes
     byte Pinfo[7]={0,0,0,0,0,0,0};byte byteIdx=0; 
-    DBLINFO(("Ebyte::CheckRadio ForE220 SENDING C1 08 03 @ M1=1,M0=1\n"))
+    DBLINFO(("TGTEbyte::CheckRadio ForE220 SENDING C1 08 03 @ M1=1,M0=1\n"))
     digitalWrite(PinM1, HIGH);digitalWrite(PinM0, HIGH);delay(50);
-    RFSERIAL.write(0xC1);RFSERIAL.write(0x08);RFSERIAL.write(0x03);RFSERIAL.flush();
+    SPort.write(0xC1);SPort.write(0x08);SPort.write(0x03);SPort.flush();
     unsigned long StartMillis = millis();
     while ( millis() - StartMillis < 200 ) { 
-      while ( RFSERIAL.available() > 0 ) {
-        Pinfo[byteIdx]=byte(RFSERIAL.read());
+      while ( SPort.available() > 0 ) {
+        Pinfo[byteIdx]=byte(SPort.read());
         DBLAAINFO(("(idx)=?"),(byteIdx),(Pinfo[byteIdx],HEX))
         if (byteIdx<6) byteIdx++;
       } if (byteIdx==6) break; 
-    } DBLAINFO((millis() - StartMillis),("Ebyte::CheckRadio ForE220 END-REPLY Duration\n"))
+    } DBLAINFO((millis() - StartMillis),("TGTEbyte::CheckRadio ForE220 END-REPLY Duration\n"))
 
     // Parse Reply
     if ( Pinfo[0]==0xC1 && Pinfo[1]==0x08 && Pinfo[2]==0x03 ) { // E220 3-byte HEAD + 3-byte Prod Info
-      if ( Pinfo[3]==0x20 && Pinfo[4]==0x0A && Pinfo[5]==0x1E ) {EM=EM_E220_400T30D;EMS=EMS_E220E22;DBLINFO(("Ebyte::CheckRadio FOUND EM=EM_E220_400T30D [V1.2]\n"))}
+      if ( Pinfo[3]==0x20 && Pinfo[4]==0x0A && Pinfo[5]==0x1E ) {EM=EM_E220_400T30D;EMS=EMS_E220E22;DBLINFO(("TGTEbyte::CheckRadio FOUND EM=EM_E220_400T30D [V1.2]\n"))}
     }
   }
   //------------------------------------------------------------------------------------------------------
@@ -534,40 +636,40 @@ void Ebyte::CheckRadio() {                                              DBLENTER
     // FOUND RADIO:  Check Radio Register Settings
     //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     GetParam(); 
-    DBLAINFO((Frequency()),("Ebyte::CheckRadio Radio Freq[mhz]=?\n"))
-    DBLAINFO((AirSpeed()),("Ebyte::CheckRadio AirSpeed=?\n"))
-    DBLAINFO((TxPower()),("Ebyte::CheckRadio Radio Power[db]=?\n"))
+    DBLAINFO((Frequency()),("TGTEbyte::CheckRadio Radio Freq[mhz]=?\n"))
+    DBLAINFO((AirSpeed()),("TGTEbyte::CheckRadio AirSpeed=?\n"))
+    DBLAINFO((TxPower()),("TGTEbyte::CheckRadio Radio Power[db]=?\n"))
 
     // Check Radio-RFAddress matches EEPROM-RFAddress
     unsigned int RFAddress=Address();
     //unsigned int EETode0RFAddress=EEPROM.get(0, EETode0RFAddress); //TodeIndex*AEB_TODEALLOC
-    //DBLAINFO((RFAddress,HEX),("Ebyte::CheckRadio Radio RFAddress=?\n"))
-    //DBLAINFO((EETode0RFAddress,HEX),("Ebyte::CheckRadio EEPROM RFAddress=?\n"))
+    //DBLAINFO((RFAddress,HEX),("TGTEbyte::CheckRadio Radio RFAddress=?\n"))
+    //DBLAINFO((EETode0RFAddress,HEX),("TGTEbyte::CheckRadio EEPROM RFAddress=?\n"))
     //if (RFAddress!=EETode0RFAddress) {
       //EEPROM.put(0,RFAddress);
-      //DBLINFO(("Ebyte::CheckRadio RFAddress!=EETode0RFAddress SET-EEPROM.put(0, RFAddress)\n"))
+      //DBLINFO(("TGTEbyte::CheckRadio RFAddress!=EETode0RFAddress SET-EEPROM.put(0, RFAddress)\n"))
     //}
 
-    // Check UART ( FOUND EM=EM_E32_433T30D [1B] Ebyte::CheckRadio UARTSped=?(3) )
+    // Check UART ( FOUND EM=EM_E32_433T30D [1B] TGTEbyte::CheckRadio UARTSped=?(3) )
     byte uartspd = UARTSpeed(); // E220&E22 Speed then Parity, E32 Parity then Speed
-    DBLAINFO((uartspd),("Ebyte::CheckRadio UARTSpeed=?\n"))
+    DBLAINFO((uartspd),("TGTEbyte::CheckRadio UARTSpeed=?\n"))
     if(EMS==EMS_E220E22&&uartspd!=12) {
       UARTSpeed(12);
-      DBLINFO(("Ebyte::CheckRadio EMS==EMS_E220E22&&uartspd!=12 SET UARTSpeed(12)\n"))
+      DBLINFO(("TGTEbyte::CheckRadio EMS==EMS_E220E22&&uartspd!=12 SET UARTSpeed(12)\n"))
     }
 
     bool fixedtrans = FixedTransmission(); // This here GET why is it calling SetParam?
     if (!fixedtrans) {
-      DBLINFO(("Ebyte::CheckRadio FixedTransmission=false SET FixedTransmission(true)\n"))
+      DBLINFO(("TGTEbyte::CheckRadio FixedTransmission=false SET FixedTransmission(true)\n"))
       FixedTransmission(true);
-    } else {;DBLINFO(("Ebyte::CheckRadio FixedTransmission=true"))}
+    } else {;DBLINFO(("TGTEbyte::CheckRadio FixedTransmission=true"))}
 
     if (EMS==EMS_E32) { 
       bool FECon = E32FECOn();
       if (!FECon) {
-        DBLINFO(("Ebyte::CheckRadio FECon=false SET E32FECOn(true)\n"))
+        DBLINFO(("TGTEbyte::CheckRadio FECon=false SET E32FECOn(true)\n"))
         E32FECOn(true);
-      } else {;DBLINFO(("Ebyte::CheckRadio FECon=true\n"))}
+      } else {;DBLINFO(("TGTEbyte::CheckRadio FECon=true\n"))}
     }
   }
   Mode(ERFNORMMODE);
