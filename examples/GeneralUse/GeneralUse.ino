@@ -14,14 +14,14 @@ void setup() {
   uint8_t RadioModel = oEbyte.RadioID();
   Serial.println("");Serial.println("");Serial.println("Radio Identity is ... ");
   switch(RadioModel) {
-    case 0: Serial.println("EM_NOTGOT");break;
-    case 1: Serial.println("EM_UNKNOWN");break;
-    case 2: Serial.println("EM_E22_400T30D");break;
-    case 3: Serial.println("EM_E22_400T33D");break;
-    case 4: Serial.println("EM_E22_900T30D");break;
-    case 5: Serial.println("EM_E32_433T20D");break;
-    case 6: Serial.println("EM_E32_433T30D");break;
-    case 7: Serial.println("EM_E220_400T30D");break;
+    case EM_NOTGOT: Serial.println("EM_NOTGOT");break;
+    case EM_UNKNOWN: Serial.println("EM_UNKNOWN");break;
+    case EM_E22_400T30D: Serial.println("EM_E22_400T30D");break;
+    case EM_E22_400T33D: Serial.println("EM_E22_400T33D");break;
+    case EM_E22_900T30D: Serial.println("EM_E22_900T30D");break;
+    case EM_E32_433T20D: Serial.println("EM_E32_433T20D");break;
+    case EM_E32_433T30D: Serial.println("EM_E32_433T30D");break;
+    case EM_E220_400T30D: Serial.println("EM_E220_400T30D");break;
   }
   Serial.println("");Serial.println("");
 
