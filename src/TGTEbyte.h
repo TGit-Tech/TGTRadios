@@ -111,7 +111,7 @@ class TGTEbyte : public TGTRadioI {
 
 //#####################################################################################################################
 TGTEbyte::TGTEbyte(HardwareSerial& _SPort, byte _PinM0, byte _PinM1, byte _PinAUX)
-: RadioI(), SPort(_SPort), PinM0(_PinM0), PinM1(_PinM1), PinAUX(_PinAUX) {
+: TGTRadioI(), SPort(_SPort), PinM0(_PinM0), PinM1(_PinM1), PinAUX(_PinAUX) {
     DBLENTER(("TGTTGTEbyte::TGTEbyte"))
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -434,7 +434,7 @@ void TGTEbyte::SetParam() {                                           DBLENTER((
   Mode(CurrentMode);    // Return to last Mode RF was set to.
 }
 //---------------------------------------------------------------------------------------------------------------------
-void TGTEbyte::GetParam(bool _SkipReq) {                                         DBLAENTER(("TGTEbyte::GetParam"),(_SkipReq))
+void TGTEbyte::GetParam(bool _SkipReq) {                                         DBLAENTER((_SkipReq),("TGTEbyte::GetParam"))
   
   // Check Radio is Known and Radio is in SETMODE
   byte CurrentMode=Mode();if (CurrentMode!=ERFSETMODE) Mode(ERFSETMODE);
@@ -463,7 +463,7 @@ void TGTEbyte::GetParam(bool _SkipReq) {                                        
         if (EMS==EMS_E220E22) {
           if (EParamGotBytes<=4) {
             switch(EParamGotBytes) {      //b[0]=Command 0xC0(Write), 0xC1(Read), 0xC2(Temp), 0xFF(Error)
-              case 0: if (b!=0xC1) {ReplyOk=false;DBLAERROR(("TGTEbyte::GetParam No 0xC1 reply[0]=\n"),(b,HEX))} break;
+              case 0: if (b!=0xC1) {ReplyOk=false;DBLAERROR((b,HEX),("TGTEbyte::GetParam No 0xC1 reply[0]=\n"))} break;
               case 1: break;              //b[1]=StartReg ( 0x00(00H) to 0x07(07H) )
               case 2: break;              //b[2]=Length ( Number of Parameter-bytes (0-8) )
               case 3: paramADDH=b; break; //b[3]=00H ADDH
@@ -497,7 +497,7 @@ void TGTEbyte::GetParam(bool _SkipReq) {                                        
       } else {DBLAAINFO((EParamGotBytes),(b,HEX),("TGTEbyte::GetParam !ReplyOk[?]=?\n"))}
     }
   }
-  DBLAINFO(("TGTEbyte::GetParam EParamGotBytes="),(EParamGotBytes))
+  DBLAINFO((EParamGotBytes),("TGTEbyte::GetParam EParamGotBytes="))
   if (!_SkipReq) Mode(CurrentMode);    // Return to last Mode RF was set to.
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -549,7 +549,7 @@ void TGTEbyte::CheckRadio() {                                              DBLEN
     while ( millis() - StartMillis < 200 ) { 
       while ( SPort.available() > 0 ) {
         Pinfo[byteIdx]=byte(SPort.read());
-        DBLAAINFO(("(idx)=?"),(byteIdx),(Pinfo[byteIdx],HEX))
+        DBLAAINFO((byteIdx),(Pinfo[byteIdx],HEX),("(idx)=?"))
         if (byteIdx<10) byteIdx++;
       } if (byteIdx==10) break; 
     } DBLAINFO((millis() - StartMillis),("TGTEbyte::CheckRadio ForE22 END-REPLY Duration\n"))
@@ -614,7 +614,7 @@ void TGTEbyte::CheckRadio() {                                              DBLEN
     while ( millis() - StartMillis < 200 ) { 
       while ( SPort.available() > 0 ) {
         Pinfo[byteIdx]=byte(SPort.read());
-        DBLAAINFO(("(idx)=?"),(byteIdx),(Pinfo[byteIdx],HEX))
+        DBLAAINFO((byteIdx),(Pinfo[byteIdx],HEX),("(idx)=?"))
         if (byteIdx<6) byteIdx++;
       } if (byteIdx==6) break; 
     } DBLAINFO((millis() - StartMillis),("TGTEbyte::CheckRadio ForE220 END-REPLY Duration\n"))
