@@ -1,0 +1,65 @@
+
+#######################################
+# Ebyte - Arduino IDE Keywords
+#######################################
+
+#######################################
+# Classes
+#######################################
+Ebyte	KEYWORD1
+RadioI	KEYWORD1
+
+#######################################
+# Methods
+#######################################
+RadioID	KEYWORD2
+Mode	KEYWORD2
+Address	KEYWORD2
+AirSpeed	KEYWORD2
+UARTSpeed	KEYWORD2
+Frequency	KEYWORD2
+Channel	KEYWORD2
+TxPower	KEYWORD2
+NetID	KEYWORD2
+FixedTransmission	KEYWORD2
+E32IODrive	KEYWORD2
+RSSIOn	KEYWORD2
+LBTOn	KEYWORD2
+WUORTime	KEYWORD2
+E32FECOn	KEYWORD2
+E22WOROn	KEYWORD2
+PacketAvailable	KEYWORD2
+Send	KEYWORD2
+
+#######################################
+# Packet Data
+#######################################
+Packet	KEYWORD2
+PacketTimer	KEYWORD2
+
+#######################################
+# Module Models
+#######################################
+EM_NOTGOT	LITERAL1
+EM_UNKNOWN	LITERAL1
+EM_E22_400T30D	LITERAL1
+EM_E22_400T33D	LITERAL1
+EM_E22_900T30D	LITERAL1
+EM_E32_433T20D	LITERAL1
+EM_E32_433T30D	LITERAL1
+EM_E220_400T30D	LITERAL1
+
+#######################################
+# Module Series
+#######################################
+EMS_UNKNOWN	LITERAL1
+EMS_E220E22	LITERAL1
+EMS_E32	LITERAL1
+
+#######################################
+# Radio Modes
+#######################################
+ERFNORMMODE	LITERAL1
+ERFWAKEMODE	LITERAL1
+ERFPWRSAVE	LITERAL1
+ERFSETMODE	LITERAL1
