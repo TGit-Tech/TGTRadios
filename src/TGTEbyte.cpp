@@ -156,9 +156,9 @@ void TGTEbyte::FixedTransmission(bool _Fixed) {    DBLAENTER((_Fixed),("TGTEbyte
   if ( EParamGotBytes==0 ) GetParam();                            // Get Parameters if needed.
 
   if (EMS==EMS_E220E22) {                                         
-    if(_Fixed) {paramREG3 += (1<<6);} else {paramREG3 += (0<<6);} // E220&E22 REG3.6
+    if(_Fixed) {paramREG3 |= 0x40;} else {paramREG3 &= ~0x40;} // E220&E22 REG3.6
   } else if (EMS==EMS_E32) {
-    if(_Fixed) {paramREG1OPT+=(1<<7);} else {paramREG1OPT+=(0<<7);} // E32 OPT.7
+    if(_Fixed) {paramREG1OPT |= 0x80;} else {paramREG1OPT &= ~0x80;} // E32 OPT.7
   }
 
   SetParam();                                                     // Write Parameters
@@ -411,13 +411,13 @@ void TGTEbyte::Mode(byte _Mode) {
 byte TGTEbyte::Mode() {
   if (EM<=EM_UNKNOWN) {/*DBLERROR(("TGTEbyte::Mode(GET) EM<=EM_UNKNOWN"))*/ return ERFNORMMODE; }
   int M1=digitalRead(PinM1);int M0=digitalRead(PinM0);
-  if (EM==EM_E22_400T33D || EM==EM_E22_400T30D ) {
+  if (EM==EM_E22_400T33D || EM==EM_E22_400T30D || EM==EM_E22_900T30D ) {
     if (M1==0 && M0==0) return ERFNORMMODE;
     if (M1==0 && M0==1) return ERFWAKEMODE;
     if (M1==1 && M0==1) return ERFPWRSAVE;
     if (M1==1 && M0==0) return ERFSETMODE;
   }
-  else if (EM==EM_E32_433T20D || EM==EM_E32_433T30D || EM_E220_400T30D ) {
+  else if (EM==EM_E32_433T20D || EM==EM_E32_433T30D || EM==EM_E220_400T30D ) {
     if (M1==0 && M0==0) return ERFNORMMODE;
     if (M1==1 && M0==0) return ERFWAKEMODE;
     if (M1==0 && M0==1) return ERFPWRSAVE;
